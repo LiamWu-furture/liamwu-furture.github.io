@@ -1,0 +1,187 @@
+/* 全站 UI 细节统一 */
+
+html {
+    scroll-behavior: smooth;
+}
+
+.main-container,
+.app-container {
+    min-width: 0;
+}
+
+/* 滚动条 */
+.content-scroll,
+.playlist-section {
+    scrollbar-width: thin;
+    scrollbar-color: #d8d8d8 transparent;
+}
+
+.content-scroll::-webkit-scrollbar,
+.playlist-section::-webkit-scrollbar {
+    width: 8px;
+}
+
+.content-scroll::-webkit-scrollbar-track,
+.playlist-section::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.content-scroll::-webkit-scrollbar-thumb,
+.playlist-section::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 10px;
+}
+
+.content-scroll::-webkit-scrollbar-thumb:hover,
+.playlist-section::-webkit-scrollbar-thumb:hover {
+    background: #ccc;
+}
+
+.following-list::-webkit-scrollbar {
+    height: 4px;
+}
+
+.following-list::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 4px;
+}
+
+/* 搜索框 */
+.search-box {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-box:focus-within {
+    background-color: #fff;
+    box-shadow: 0 0 0 2px rgba(236, 65, 65, 0.12);
+}
+
+.search-box input::placeholder {
+    transition: color 0.2s;
+}
+
+/* 导航 hover 统一 */
+.menu-group li:hover,
+.fav-playlists li:hover {
+    background-color: #e7e7e7 !important;
+}
+
+/* 播放器 */
+.player-time-row {
+    display: none !important;
+}
+
+.player-bar {
+    box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.04);
+}
+
+#volumeContainer {
+    width: 70px;
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: height 0.15s ease;
+    flex-shrink: 0;
+}
+
+#volumeContainer:hover {
+    height: 6px;
+}
+
+#volumeBar {
+    height: 100% !important;
+    background: #ec4141 !important;
+    border-radius: 2px;
+    transition: width 0.12s linear;
+}
+
+.ctrl-btn {
+    transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.ctrl-btn:active {
+    transform: scale(0.9);
+}
+
+.play-pause-btn:active {
+    transform: scale(0.94);
+}
+
+.album-cover,
+.player-cover {
+    transition: box-shadow 0.3s ease;
+}
+
+/* 卡片交互 */
+.card-item,
+.recommend-card,
+.feed-card,
+.activity-card,
+.banner-card {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-play-count {
+    backdrop-filter: blur(4px);
+}
+
+.card-cover-wrapper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.18), transparent 45%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+
+.card-item:hover .card-cover-wrapper::after {
+    opacity: 1;
+}
+
+/* 播客网格响应式 */
+@media (max-width: 1400px) {
+    .card-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    .featured-podcast-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (max-width: 1100px) {
+    .card-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .featured-podcast-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .recommend-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 860px) {
+    .card-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .featured-podcast-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 顶栏消息红点，避免与播放器数字 badge 冲突 */
+.user-status-bar .icon-wrapper > .badge {
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    font-size: 0;
+    transform: none;
+    top: -2px;
+    right: -3px;
+}

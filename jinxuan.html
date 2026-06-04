@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仿网易云音乐 - 歌单与新歌</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f7;
+            color: #333;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- 1. 左侧侧边栏 --- */
+        .sidebar {
+            width: 220px;
+            background-color: #f3f3f3;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0 10px 0;
+            flex-shrink: 0;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            padding: 0 20px 15px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ec4141;
+            letter-spacing: 1px;
+        }
+        .logo svg { margin-right: 8px; }
+        .menu-group { margin-bottom: 20px; }
+        .menu-group h3 { font-size: 12px; color: #999; padding: 0 20px 8px 20px; font-weight: normal; }
+        .menu-group ul { list-style: none; }
+        .menu-group li { display: flex; align-items: center; padding: 9px 20px; font-size: 14px; color: #444; cursor: pointer; transition: all 0.2s ease; }
+        .menu-group li:hover { background-color: #e7e7e9; color: #333; }
+        .menu-group li.active { background-color: #e7e7e9; color: #333; font-weight: bold; border-left: 3px solid #ec4141; padding-left: 17px; }
+        .menu-group li svg { margin-right: 10px; width: 16px; height: 16px; fill: currentColor; }
+        .playlist-section { flex: 1; overflow-y: auto; border-top: 1px solid #e8e8e8; padding-top: 10px; }
+        .playlist-section::-webkit-scrollbar { width: 5px; }
+        .playlist-section::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+        .sidebar-title { font-size: 12px; color: #999; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .sidebar-title:hover { color: #666; }
+        .fav-playlists { list-style: none; }
+        .fav-playlists li { display: flex; align-items: center; padding: 6px 20px; font-size: 13px; color: #444; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .fav-playlists li:hover { background-color: #e7e7e9; }
+        .fav-playlists li svg { margin-right: 8px; flex-shrink: 0; fill: #666; }
+        .fav-playlists li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- 2. 主体内容区域 --- */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: #ffffff;
+            padding-bottom: 75px;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+            background-color: #f7f9fa;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            background-color: #ededed;
+            border-radius: 30px;
+            padding: 5px 12px;
+            width: 260px;
+            position: relative;
+        }
+        .search-box input {
+            border: none;
+            background: none;
+            outline: none;
+            font-size: 13px;
+            width: 100%;
+            color: #333;
+            padding-left: 5px;
+        }
+        .search-box input::placeholder { color: #999; }
+        .search-box svg { fill: #666; width: 16px; height: 16px; cursor: pointer; }
+
+        /* 用户状态栏样式 */
+        .user-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-profile { display: flex; align-items: center; gap: 8px; }
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: #ddd;
+            cursor: pointer;
+        }
+        .username { font-size: 14px; color: #4a729a; font-weight: 500; cursor: pointer; }
+        .vip-tag {
+            display: flex;
+            align-items: center;
+            background-color: #2b2525;
+            color: #e5c494;
+            padding: 2px 8px 2px 4px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            height: 20px;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .vinyl-icon {
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle, #ff3b30 4px, #111 5px, #333 10px);
+            border-radius: 50%;
+            border: 1px solid #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vinyl-icon::after {
+            content: '';
+            width: 2px;
+            height: 2px;
+            background-color: #fff;
+            border-radius: 50%;
+        }
+
+        .vip-text {
+            transform: scale(0.9);
+            white-space: nowrap;
+        }
+
+        .arrow-down {
+            color: #8a9aa8;
+            font-size: 12px;
+            margin-left: 2px;
+            cursor: pointer;
+        }
+
+        .icon-actions {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-left: 16px;
+            margin-right: 8px;
+        }
+
+        .icon-wrapper {
+            position: relative;
+            color: #667684;
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .icon-wrapper:hover {
+            color: #333;
+        }
+
+        .badge {
+            position: absolute;
+            top: -2px;
+            right: -3px;
+            width: 6px;
+            height: 6px;
+            background-color: #ff3b30;
+            border-radius: 50%;
+            border: 1px solid #f7f9fa;
+        }
+
+        .divider {
+            width: 1px;
+            height: 16px;
+            background-color: #e1e6eb;
+            margin-right: 12px;
+        }
+
+        .window-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: #8a9aa8;
+            font-size: 14px;
+        }
+
+        .control-btn {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .control-btn:hover {
+            color: #333;
+        }
+
+        /* 滚动内容区 */
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 30px;
+        }
+
+        /* 页面二级分类标签导航 */
+        .sub-nav {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            list-style: none;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 1px solid #f9f9f9;
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .sub-nav li { cursor: pointer; padding: 0 4px; position: relative; white-space: nowrap; }
+        .sub-nav li.active { color: #000; font-weight: bold; font-size: 16px; }
+        .sub-nav li.active::after {
+            content: "";
+            position: absolute;
+            bottom: -11px; left: 0; right: 0;
+            height: 3px; background-color: #ec4141;
+            border-radius: 2px;
+        }
+        /* 更多下拉菜单 */
+        .more-wrapper { position: relative; }
+        .more-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 8px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            padding: 10px 0;
+            z-index: 50;
+            min-width: 120px;
+        }
+        .more-dropdown.show { display: block; }
+        .more-dropdown li {
+            padding: 8px 20px;
+            font-size: 13px;
+            color: #444;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .more-dropdown li:hover { background-color: #f5f5f7; color: #ec4141; }
+        /* Tab内容区域 */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 统一大标题 */
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 25px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        /* 官方歌单：6列卡片 + hover效果 */
+        .playlist-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+        }
+        .playlist-card {
+            cursor: pointer;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #174251;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.3s ease;
+        }
+        .playlist-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        .cover-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 130px;
+            overflow: hidden;
+        }
+        .playlist-img-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 130px;
+            overflow: hidden;
+        }
+        .playlist-img-wrapper img {
+            transition: transform 0.4s ease, filter 0.4s ease;
+        }
+        .playlist-card:hover .playlist-img-wrapper img {
+            transform: scale(1.05);
+            filter: blur(8px) brightness(0.6);
+        }
+        .playlist-placeholder {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.4;
+            z-index: 2;
+            transition: background 0.4s ease;
+        }
+        .playlist-placeholder .tag-desc {
+            display: block;
+            font-size: 11px;
+            font-weight: normal;
+            opacity: 0.7;
+            margin-top: 8px;
+            padding: 0 10px;
+        }
+        .cover-img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease, filter 0.4s ease;
+        }
+        .cover-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.1);
+            transition: background 0.4s ease;
+        }
+        .playlist-card:hover .cover-img {
+            transform: scale(1.05);
+            filter: blur(8px) brightness(0.6);
+        }
+        .playlist-card:hover .cover-wrapper::after {
+            background: rgba(0,0,0,0.4);
+        }
+        .playlist-count {
+            position: absolute;
+            top: 5px; right: 8px;
+            color: #fff; font-size: 11px;
+            z-index: 2;
+        }
+        .song-list {
+            position: absolute;
+            top: 15px; left: 15px; right: 15px;
+            z-index: 2;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: opacity 0.35s ease, transform 0.35s ease;
+            list-style: none;
+            color: rgba(255,255,255,0.9);
+            font-size: 12px;
+        }
+        .song-list li {
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .song-list li span {
+            margin-right: 5px;
+            color: rgba(255,255,255,0.5);
+        }
+        .playlist-card:hover .song-list {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .content-area {
+            position: relative;
+            padding: 10px 12px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.35s cubic-bezier(0.25,1,0.5,1);
+        }
+        .content-area .title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.4;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .content-area .description {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .playlist-card:hover .content-area {
+            transform: translateY(-20px);
+        }
+        .play-btn {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #174251;
+            font-size: 11px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .play-btn:hover {
+            background-color: #fff;
+            transform: scale(1.05) !important;
+        }
+        .playlist-card:hover .play-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 最新音乐：3列式列表布局 */
+        .songs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            column-gap: 20px;
+            row-gap: 10px;
+        }
+        .song-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .song-item:hover {
+            background-color: #f3f3f5;
+        }
+        /* 特殊状态：中间处于被选中的播放项 */
+        .song-item.playing {
+            background-color: #f3f3f5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .song-item-cover {
+            width: 48px;
+            height: 48px;
+            border-radius: 4px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .song-item-cover.has-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .song-item-cover.has-img > span { display: none; }
+        .song-item-cover i {
+            position: absolute;
+            font-size: 14px;
+        }
+        .song-item-detail {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .song-title { font-size: 13px; font-weight: 500; color: #333; }
+        .song-tags { display: flex; gap: 4px; }
+        .tag-sq { font-size: 9px; color: #ec4141; border: 1px solid #ec4141; padding: 0 2px; border-radius: 2px; scale: 0.9; }
+        .song-author { font-size: 12px; color: #999; }
+        .song-actions { display: flex; gap: 12px; color: #999; margin-right: 5px; font-size: 14px; }
+
+        /* 精选有声书部分 */
+        .audiobook-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f9f9fa;
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .audiobook-left { display: flex; align-items: center; gap: 10px; }
+        .audiobook-icon { width: 35px; height: 35px; background: #e8daef; border-radius: 4px; display: flex; align-items: center; justify-content: center; color:#8e44ad; }
+
+        /* --- 3. 底部播放控制栏 --- */
+        .player-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 75px;
+            background-color: #ffffff;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+        }
+        .left-panel { display: flex; align-items: center; min-width: 300px; }
+        .album-cover {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        .song-info { margin-left: 12px; margin-right: 20px; }
+        .song-info .song-title { font-size: 14px; color: #333; font-weight: 500; margin-bottom: 4px; cursor: pointer; }
+        .song-info .song-title:hover { text-decoration: underline; }
+        .song-info .artist { font-size: 12px; color: #999; }
+        .interactions { display: flex; align-items: center; gap: 15px; margin-left: 10px; }
+        .icon-btn-count { display: flex; align-items: center; position: relative; color: #666; font-size: 20px; cursor: pointer; }
+        .icon-btn-count.liked { color: #ff4d4f; }
+        .icon-btn-count .badge { position: absolute; top: -6px; left: 18px; font-size: 9px; color: #ff4d4f; font-weight: bold; white-space: nowrap; transform: scale(0.85); }
+        .comment-btn .badge { color: #888; }
+        .center-panel { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 45%; }
+        .control-row { display: flex; align-items: center; gap: 24px; }
+        .ctrl-btn { background: none; border: none; color: #4a5568; font-size: 16px; cursor: pointer; transition: color 0.2s; display: flex; align-items: center; justify-content: center; }
+        .ctrl-btn:hover { color: #111; }
+        .play-pause-btn {
+            width: 42px; height: 42px;
+            background-color: #ff4242;
+            color: #ffffff;
+            border-radius: 50%;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(255,66,66,0.2);
+        }
+        .play-pause-btn:hover { background-color: #f53131; color: #fff; }
+        .right-panel { display: flex; align-items: center; gap: 20px; color: #555; }
+        .quality-tag { font-size: 10px; border: 1px solid #777; color: #555; padding: 0 4px; border-radius: 3px; font-weight: bold; letter-spacing: 0.5px; cursor: pointer; transform: scale(0.9); }
+        .quality-tag:hover { border-color: #ff4242; color: #ff4242; }
+        .right-icon { font-size: 16px; cursor: pointer; transition: color 0.2s; }
+        .right-icon:hover { color: #111; }
+        .lrc-icon { font-size: 14px; font-weight: bold; border: 1px solid transparent; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="#ec4141"><path d="M13.046 9.388a3.919 3.919 0 0 0-.66.19c-.809.312-1.447.991-1.666 1.775a2.269 2.269 0 0 0-.074.81c.048.546.333 1.05.764 1.35a1.483 1.483 0 0 0 2.01-.286c.406-.531.355-1.183.24-1.636-.098-.387-.22-.816-.345-1.249a64.76 64.76 0 0 1-.269-.954zm-.82 10.07c-3.984 0-7.224-3.24-7.224-7.223 0-.98.226-3.02 1.884-4.822A7.188 7.188 0 0 1 9.502 5.6a.792.792 0 1 1 .587 1.472 5.619 5.619 0 0 0-2.795 2.462 5.538 5.538 0 0 0-.707 2.7 5.645 5.645 0 0 0 5.638 5.638c1.844 0 3.627-.953 4.542-2.428 1.042-1.68.772-3.931-.627-5.238a3.299 3.299 0 0 0-1.437-.777c.172.589.334 1.18.494 1.772.284 1.12.1 2.181-.519 2.989-.39.51-.956.888-1.592 1.064a3.038 3.038 0 0 1-2.58-.44 3.45 3.45 0 0 1-1.44-2.514c-.04-.467.002-.93.128-1.376.35-1.256 1.356-2.339 2.622-2.826a5.5 5.5 0 0 1 .823-.246l-.134-.505c-.37-1.371.25-2.579 1.547-3.007.329-.109.68-.145 1.025-.105.792.09 1.476.592 1.709 1.023.258.507-.096 1.153-.706 1.153a.788.788 0 0 1-.54-.213c-.088-.08-.163-.174-.259-.247a.825.825 0 0 0-.632-.166.807.807 0 0 0-.634.551c-.056.191-.031.406.02.595.07.256.159.597.217.82 1.11.098 2.162.54 2.97 1.296 1.974 1.844 2.35 4.886.892 7.233-1.197 1.93-3.509 3.177-5.889 3.177zM0 12c0 6.627 5.373 12 12 12s12-5.373 12-12S18.627 0 12 0 0 5.373 0 12Z"/></svg>
+            <span>网易云音乐</span>
+        </div>
+
+        <nav class="menu-group">
+            <h3>发现</h3>
+            <ul>
+                <a href="index.html" style="text-decoration: none; color: inherit;">
+                    <li class="nav-item" data-target="recommend">
+                        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        推荐
+                    </li>
+                </a>
+                <li class="nav-item active" data-target="featured">
+                    <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                    精选
+                </li>
+                <a href="boke.html" style="text-decoration: none; color: inherit;">
+                    <li class="nav-item" data-target="podcast">
+                        <svg viewBox="0 0 24 24"><path d="M12 2c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2s2-.9 2-2V4c0-1.1-.9-2-2-2zm6 10c0 3.31-2.69 6-6 6s-6-2.69-6-6H4c0 4.07 3.06 7.44 7 7.93V22h2v-2.07c3.94-.49 7-3.86 7-7.93h-2z"/></svg>
+                        播客
+                    </li>
+                </a>
+                <a href="manyou.html" style="text-decoration: none; color: inherit;">
+                        <li class="nav-item" data-target="roam">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                            漫游
+                        </li>
+                    </a>
+                <a href="guanzhu.html" style="text-decoration: none; color: inherit;">
+                    <li class="nav-item" data-target="follow">
+                        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                        关注
+                    </li>
+                </a>
+            </ul>
+        </nav>
+
+        <nav class="menu-group">
+            <h3>我的</h3>
+            <ul>
+                <a href="xihuan.html" style="text-decoration: none; color: inherit;">
+                    <li class="nav-item">
+                        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        我喜欢的音乐
+                    </li>
+                </a>
+                <a href="zuijin.html" style="text-decoration: none; color: inherit;">
+                <li class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+                    最近播放
+                </li>
+                </a>
+            </ul>
+        </nav>
+
+        <div class="playlist-section">
+            <div class="sidebar-title">创建的歌单 <span>+</span></div>
+            <div class="sidebar-title">收藏的歌单 (3)</div>
+            <ul class="fav-playlists">
+                <li class="playlist-item" data-playlist="梦想粉碎机">
+                    <svg viewBox="0 0 24 24" width="14" height="14"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 12h-4v-2h4v2zm3-4H7V9h10v2z"/></svg>
+                    <span>梦想粉碎机：给平凡注入力量</span>
+                </li>
+                <li class="playlist-item" data-playlist="看书听的乐器伴奏">
+                    <svg viewBox="0 0 24 24" width="14" height="14"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 12h-4v-2h4v2zm3-4H7V9h10v2z"/></svg>
+                    <span>看书/约会轻松听的音乐伴奏</span>
+                </li>
+                <li class="playlist-item" data-playlist="深夜励志回响">
+                    <svg viewBox="0 0 24 24" width="14" height="14"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 12h-4v-2h4v2zm3-4H7V9h10v2z"/></svg>
+                    <span>常常会听起的几首励志老歌</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <header class="header">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" placeholder="搜索你曾是少年 - 焦迈奇">
+            </div>
+            <div class="user-status-bar">
+                <div class="user-profile">
+                    <img class="avatar" src="images/head.jpg" alt="avatar">
+                    <span class="username">wujia</span>
+                    <div class="vip-tag">
+                        <div class="vinyl-icon"></div>
+                        <span class="vip-text">VIP 8</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down arrow-down"></i>
+                </div>
+
+                <div class="icon-actions">
+                    <div class="icon-wrapper">
+                        <i class="fa-regular fa-envelope"></i>
+                        <div class="badge"></div>
+                    </div>
+                    <div class="icon-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" /><circle cx="12" cy="12" r="3" /></svg>
+                    </div>
+                    <div class="icon-wrapper">
+                        <i class="fa-solid fa-shirt"></i>
+                        <div class="badge"></div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="window-controls">
+                    <i class="fa-regular fa-window-restore control-btn" style="font-size: 13px;"></i>
+                    <i class="fa-solid fa-minus control-btn"></i>
+                    <i class="fa-regular fa-square control-btn" style="font-size: 12px;"></i>
+                    <i class="fa-solid fa-xmark control-btn" style="font-size: 15px;"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-scroll">
+            
+            <ul class="sub-nav">
+                <li class="active" data-tab="jingxuan">精选</li>
+                <li data-tab="gedanguangchang">歌单广场</li>
+                <li data-tab="hangxingbang">排行榜</li>
+                <li data-tab="geshou">歌手</li>
+                <li data-tab="vip">VIP</li>
+                <li data-tab="huayu">华语</li>
+                <li data-tab="qingge">情歌</li>
+                <li data-tab="ost">OST</li>
+                <li data-tab="jingdian">经典</li>
+                <li data-tab="oumei">欧美</li>
+                <li class="more-wrapper" data-tab="more">更多 <i class="fa-solid fa-angle-down" style="font-size: 12px;"></i>
+                    <ul class="more-dropdown">
+                        <li data-tab="minyao">民谣</li>
+                        <li data-tab="yaogun">摇滚</li>
+                        <li data-tab="dianzi">电子</li>
+                        <li data-tab="hiphop">说唱/Hip-Hop</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <!-- ========== 精选 ========== -->
+            <div class="tab-content active" id="tab-jingxuan">
+                <div class="section-title">官方歌单 <i class="fa-solid fa-chevron-right" style="font-size:14px;"></i></div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="cover-wrapper">
+                            <img class="cover-img" src="images/photo-1514525253161-7a46d19cd819.jpg" alt="粤语歌单">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 425.9万</span>
+                            <ul class="song-list">
+                                <li><span>1</span>富士山下</li>
+                                <li><span>2</span>喜帖街</li>
+                                <li><span>3</span>处处吻</li>
+                            </ul>
+                        </div>
+                        <div class="content-area">
+                            <div class="title">NEW 粤语 | 每逢新歌必到</div>
+                            <div class="description">阿德勒, 陈奕迅, 林奕匡等</div>
+                            <div class="play-btn"><i class="fa-solid fa-play" style="margin-left:2px;"></i></div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="cover-wrapper">
+                            <img class="cover-img" src="images/photo-1511379938547-c1f69419868d.jpg" alt="R&B歌单">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 22.5万</span>
+                            <ul class="song-list">
+                                <li><span>1</span>红颜如霜</li>
+                                <li><span>2</span>说散就散</li>
+                                <li><span>3</span>体面</li>
+                            </ul>
+                        </div>
+                        <div class="content-area">
+                            <div class="title">R&B ❤️ 红心宝藏</div>
+                            <div class="description">高品质R&B推荐</div>
+                            <div class="play-btn"><i class="fa-solid fa-play" style="margin-left:2px;"></i></div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="cover-wrapper">
+                            <img class="cover-img" src="images/photo-1493225457124-a3eb161ffa5f.jpg" alt="K-Pop歌单">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 15.1万</span>
+                            <ul class="song-list">
+                                <li><span>1</span>Butter</li>
+                                <li><span>2</span>Dynamite</li>
+                                <li><span>3</span>Permission to Dance</li>
+                            </ul>
+                        </div>
+                        <div class="content-area">
+                            <div class="title">K-Pop 放松被窝</div>
+                            <div class="description">休闲时光BGM当然选K-Pop</div>
+                            <div class="play-btn"><i class="fa-solid fa-play" style="margin-left:2px;"></i></div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="cover-wrapper">
+                            <img class="cover-img" src="images/photo-1459749411175-04bf5292ceea.jpg" alt="经典英文歌单">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 9851</span>
+                            <ul class="song-list">
+                                <li><span>1</span>Yesterday Once More</li>
+                                <li><span>2</span>My Heart Will Go On</li>
+                                <li><span>3</span>Hotel California</li>
+                            </ul>
+                        </div>
+                        <div class="content-area">
+                            <div class="title">经典 英文热单</div>
+                            <div class="description">悦耳动听 经典歌不限时</div>
+                            <div class="play-btn"><i class="fa-solid fa-play" style="margin-left:2px;"></i></div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="cover-wrapper">
+                            <img class="cover-img" src="images/photo-1507838153414-b4b713384a76.jpg" alt="华语流行歌单">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 27.2万</span>
+                            <ul class="song-list">
+                                <li><span>1</span>晴天</li>
+                                <li><span>2</span>七里香</li>
+                                <li><span>3</span>稻香</li>
+                            </ul>
+                        </div>
+                        <div class="content-area">
+                            <div class="title">00s 华语流行</div>
+                            <div class="description">那些年追过的华语经典</div>
+                            <div class="play-btn"><i class="fa-solid fa-play" style="margin-left:2px;"></i></div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="cover-wrapper">
+                            <img class="cover-img" src="images/photo-1487180144351-b8472da7d491.jpg" alt="Lofi歌单">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 337.1万</span>
+                            <ul class="song-list">
+                                <li><span>1</span>Midnight Rain</li>
+                                <li><span>2</span>Snowman</li>
+                                <li><span>3</span>Golden Hour</li>
+                            </ul>
+                        </div>
+                        <div class="content-area">
+                            <div class="title">Lofi驾车</div>
+                            <div class="description">深夜节奏抚慰旅途心灵</div>
+                            <div class="play-btn"><i class="fa-solid fa-play" style="margin-left:2px;"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-title">最新音乐 <i class="fa-solid fa-chevron-right" style="font-size:14px;"></i></div>
+                <div class="songs-grid">
+                    <div>
+                        <div class="song-item">
+                            <div class="song-item-cover" style="background:#444;"><i class="fa-solid fa-play"></i></div>
+                            <div class="song-item-detail">
+                                <div class="song-title">玻璃</div>
+                                <div class="song-tags"><span class="tag-sq">SQ</span><span class="tag-sq" style="color:#b7950b; border-color:#b7950b;">MV</span><span class="song-author">Gareth.T</span></div>
+                            </div>
+                        </div>
+                        <div class="song-item" style="margin-top:5px;">
+                            <div class="song-item-cover" style="background:#78281f;"><i class="fa-solid fa-play"></i></div>
+                            <div class="song-item-detail">
+                                <div class="song-title">主角</div>
+                                <div class="song-tags"><span class="tag-sq">SQ</span><span class="tag-sq" style="color:#b7950b; border-color:#b7950b;">MV</span><span class="song-author">王菲</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="song-item">
+                            <div class="song-item-cover" style="background:#1e8449;"><i class="fa-solid fa-play"></i></div>
+                            <div class="song-item-detail">
+                                <div class="song-title">月下疏茶</div>
+                                <div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">陈庄</span></div>
+                            </div>
+                        </div>
+                        <div class="song-item playing" style="margin-top:5px;">
+                            <div class="song-item-cover" style="background:#111;"><i class="fa-solid fa-pause" style="color:#ec4141;"></i></div>
+                            <div class="song-item-detail">
+                                <div class="song-title" style="color:#ec4141;">Wish u never</div>
+                                <div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">张子豪 Mizzu / Top Barry</span></div>
+                            </div>
+                            <div class="song-actions">
+                                <i class="fa-regular fa-arrow-alt-circle-down"></i>
+                                <i class="fa-regular fa-heart"></i>
+                                <i class="fa-solid fa-ellipsis"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="song-item">
+                            <div class="song-item-cover" style="background:#a9dfbf;"><i class="fa-solid fa-play"></i></div>
+                            <div class="song-item-detail">
+                                <div class="song-title">Not Angry (粤语客串版)</div>
+                                <div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">郑欣宜 / Chris James</span></div>
+                            </div>
+                        </div>
+                        <div class="song-item" style="margin-top:5px;">
+                            <div class="song-item-cover" style="background:#e6b0aa;"><i class="fa-solid fa-play"></i></div>
+                            <div class="song-item-detail">
+                                <div class="song-title">雷霆与吻痕</div>
+                                <div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">Haggg</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="audiobook-bar">
+                    <div class="audiobook-left">
+                        <div class="audiobook-icon"><i class="fa-solid fa-book-open"></i></div>
+                        <div>听过的有声书</div>
+                    </div>
+                    <div style="color: #999; font-size:12px;">【免费】都市超级仙帝 | 重生修复热血爽文 <span style="margin-left:15px; color:#ec4141;">9.6分</span></div>
+                </div>
+            </div>
+
+            <!-- ========== 歌单广场 ========== -->
+            <div class="tab-content" id="tab-gedanguangchang">
+                <div class="section-title">热门歌单</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1470225620780-dba8ba36b745.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="热门歌单">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 1024.6万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(192,57,43,0.9));">
+                                热歌<br>排行榜
+                                <span class="tag-desc">全网最热歌曲实时更新 | 紧跟音乐潮流</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1510915361894-db8b60106cb1.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="私人FM">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 86.3万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(22,160,133,0.9));">
+                                私人FM<br>每日推荐
+                                <span class="tag-desc">根据你的口味生成 | 每天更新30首</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1504898770365-14faca6a7320.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="治愈系">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 56.8万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(142,68,173,0.9));">
+                                治愈系<br>轻音乐
+                                <span class="tag-desc">减压放松 | 让心灵回归平静</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1493225457124-a3eb161ffa5f.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="运动健身">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 33.2万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(243,156,18,0.9));">
+                                运动<br>健身BGM
+                                <span class="tag-desc">燃脂节拍 | 跑步撸铁必备</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1446057032654-9d8885571845.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="学习专注">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 218.9万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(41,128,185,0.9));">
+                                学习<br>专注力
+                                <span class="tag-desc">白噪音+纯音乐 | 提升学习效率</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1524368535928-5b5e00ddc76b.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="咖啡时光">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 45.1万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(108,92,72,0.9));">
+                                咖啡<br>时光
+                                <span class="tag-desc">午后慵懒 | 爵士民谣咖啡伴侣</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 排行榜 ========== -->
+            <div class="tab-content" id="tab-hangxingbang">
+                <div class="section-title"><i class="fa-solid fa-trophy" style="color:#f9d423;"></i> 飙升榜</div>
+                <div class="songs-grid">
+                    <div>
+                        <div class="song-item"><div class="song-item-cover" style="background:#e74c3c;"><span style="font-weight:bold;font-size:18px;">1</span></div><div class="song-item-detail"><div class="song-title">APT.</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">ROSÉ / Bruno Mars</span></div></div></div>
+                        <div class="song-item" style="margin-top:5px;"><div class="song-item-cover" style="background:#e67e22;"><span style="font-weight:bold;font-size:18px;">4</span></div><div class="song-item-detail"><div class="song-title">晚风心里吹</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">王宇宙 / 阿虾</span></div></div></div>
+                    </div>
+                    <div>
+                        <div class="song-item"><div class="song-item-cover" style="background:#e74c3c;"><span style="font-weight:bold;font-size:18px;">2</span></div><div class="song-item-detail"><div class="song-title">比个耶</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="tag-sq" style="color:#b7950b; border-color:#b7950b;">MV</span><span class="song-author">刘雨昕</span></div></div></div>
+                        <div class="song-item" style="margin-top:5px;"><div class="song-item-cover" style="background:#e67e22;"><span style="font-weight:bold;font-size:18px;">5</span></div><div class="song-item-detail"><div class="song-title">瞬</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">周深</span></div></div></div>
+                    </div>
+                    <div>
+                        <div class="song-item"><div class="song-item-cover" style="background:#e74c3c;"><span style="font-weight:bold;font-size:18px;">3</span></div><div class="song-item-detail"><div class="song-title">玻璃</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">Gareth.T</span></div></div></div>
+                        <div class="song-item" style="margin-top:5px;"><div class="song-item-cover" style="background:#e67e22;"><span style="font-weight:bold;font-size:18px;">6</span></div><div class="song-item-detail"><div class="song-title">平凡之路</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">朴树</span></div></div></div>
+                    </div>
+                </div>
+                <div class="section-title"><i class="fa-solid fa-fire" style="color:#ec4141;"></i> 热歌榜</div>
+                <div class="songs-grid">
+                    <div>
+                        <div class="song-item"><div class="song-item-cover" style="background:#c0392b;"><span style="font-weight:bold;font-size:18px;">1</span></div><div class="song-item-detail"><div class="song-title">Wish u never</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">张子豪 Mizzu</span></div></div></div>
+                        <div class="song-item" style="margin-top:5px;"><div class="song-item-cover has-img"><img src="images/songs/xiulian.jpg" alt="修炼爱情"><i class="fa-solid fa-play"></i></div><div class="song-item-detail"><div class="song-title">修炼爱情</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">林俊杰</span></div></div></div>
+                    </div>
+                    <div>
+                        <div class="song-item"><div class="song-item-cover has-img"><img src="images/songs/shaonian.jpg" alt="你曾是少年"><i class="fa-solid fa-play"></i></div><div class="song-item-detail"><div class="song-title">你曾是少年</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">焦迈奇</span></div></div></div>
+                        <div class="song-item" style="margin-top:5px;"><div class="song-item-cover has-img"><img src="images/songs/yintong.jpg" alt="隐隐作痛"><i class="fa-solid fa-play"></i></div><div class="song-item-detail"><div class="song-title">隐隐作痛</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">动力火车</span></div></div></div>
+                    </div>
+                    <div>
+                        <div class="song-item"><div class="song-item-cover has-img"><img src="images/songs/butong.jpg" alt="有什么不同"><i class="fa-solid fa-play"></i></div><div class="song-item-detail"><div class="song-title">有什么不同</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">曲婉婷</span></div></div></div>
+                        <div class="song-item" style="margin-top:5px;"><div class="song-item-cover has-img"><img src="images/songs/suidao.jpg" alt="时空隧道"><i class="fa-solid fa-play"></i></div><div class="song-item-detail"><div class="song-title">时空隧道</div><div class="song-tags"><span class="tag-sq">SQ</span><span class="song-author">陈奕迅</span></div></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 歌手 ========== -->
+            <div class="tab-content" id="tab-geshou">
+                <div class="section-title">热门歌手</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1493225457124-a3eb161ffa5f.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="周杰伦">
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(44,62,80,0.9));">
+                                周杰伦
+                                <span class="tag-desc">华语乐坛天王 | 代表作: 晴天、七里香、稻香</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1516450360452-9312f5e86fc7.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="林俊杰">
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(41,128,185,0.9));">
+                                林俊杰
+                                <span class="tag-desc">行走的CD | 代表作: 修炼爱情、可惜没如果</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1508700115892-45ecd05ae2ad.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="陈奕迅">
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(192,57,43,0.9));">
+                                陈奕迅
+                                <span class="tag-desc">歌神接班人 | 代表作: 十年、浮夸、孤勇者</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1460723237483-7a6dc9d0b212.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="Taylor Swift">
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(142,68,173,0.9));">
+                                Taylor Swift
+                                <span class="tag-desc">全球流行天后 | 代表作: Anti-Hero, Love Story</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1459749411175-04bf5292ceea.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="邓紫棋">
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(243,156,18,0.9));">
+                                邓紫棋
+                                <span class="tag-desc">铁肺歌后 | 代表作: 光年之外、泡沫</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1514525253161-7a46d19cd819.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="薛之谦">
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(39,174,96,0.9));">
+                                薛之谦
+                                <span class="tag-desc">创作才子 | 代表作: 演员、认真的雪</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== VIP ========== -->
+            <div class="tab-content" id="tab-vip">
+                <div class="section-title"><i class="fa-solid fa-crown" style="color:#f9d423;"></i> VIP专属歌单</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1487180144351-b8472da7d491.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="VIP臻选">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 562.3万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(30,30,30,0.95));">
+                                VIP<br>臻选Hi-Res
+                                <span class="tag-desc">无损音质专享 | 聆听每一个细节</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1507838153414-b4b713384a76.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="VIP新歌">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 89.7万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(192,57,43,0.9));">
+                                VIP<br>抢先听新歌
+                                <span class="tag-desc">VIP抢先48小时 | 新歌早知道</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1459749411175-04bf5292ceea.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="VIP数字专辑">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 234.1万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(142,68,173,0.9));">
+                                VIP<br>数字专辑
+                                <span class="tag-desc">热门数字专辑合集 | VIP尊享折扣</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1511379938547-c1f69419868d.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="VIP助眠">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 178.5万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(22,160,133,0.9));">
+                                VIP<br>助眠白噪音
+                                <span class="tag-desc">VIP专属音效 | 高品质助眠体验</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 华语 ========== -->
+            <div class="tab-content" id="tab-huayu">
+                <div class="section-title">华语精选</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1514525253161-7a46d19cd819.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="华语经典">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 687.2万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(192,57,43,0.9));">
+                                华语<br>经典金曲
+                                <span class="tag-desc">百听不厌的华语经典 | 跨越时代的旋律</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1507838153414-b4b713384a76.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="华语新歌">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 234.5万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(125,33,128,0.9));">
+                                华语<br>新歌速递
+                                <span class="tag-desc">最新华语单曲每日更新 | 发现新声音</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1493225457124-a3eb161ffa5f.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="华语民谣">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 145.8万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(39,174,96,0.9));">
+                                华语<br>民谣合集
+                                <span class="tag-desc">文艺青年必听 | 简单的旋律最动人</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1487180144351-b8472da7d491.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="华语说唱">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 89.3万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(44,62,80,0.9));">
+                                华语<br>说唱精选
+                                <span class="tag-desc">中文说唱崛起 | 态度与实力并存</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1511379938547-c1f69419868d.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="华语R&B">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 67.1万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(160,64,0,0.9));">
+                                华语<br>R&B精选
+                                <span class="tag-desc">华语R&B佳作 | 律动与柔情兼备</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1459749411175-04bf5292ceea.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="粤语经典">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 312.6万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(100,30,22,0.9));">
+                                粤语<br>经典回响
+                                <span class="tag-desc">港乐黄金年代 | 永不过时的粤语金曲</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 情歌 ========== -->
+            <div class="tab-content" id="tab-qingge">
+                <div class="section-title">情歌合集</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1518609878373-06d740f60d8b.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="甜蜜情歌">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 456.7万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(231,76,60,0.9));">
+                                甜蜜<br>恋爱情歌
+                                <span class="tag-desc">恋爱的味道 | 甜甜的歌送给甜甜的你</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1507838153414-b4b713384a76.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="伤感情歌">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 328.9万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(44,62,80,0.9));">
+                                伤感<br>催泪情歌
+                                <span class="tag-desc">深夜独自聆听 | 那些让人泪目的情歌</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1511379938547-c1f69419868d.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="经典情歌">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 567.3万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(142,68,173,0.9));">
+                                经典<br>对唱情歌
+                                <span class="tag-desc">双人合唱 | 最浪漫的音乐对话</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1493225457124-a3eb161ffa5f.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="英文情歌">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 198.4万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(41,128,185,0.9));">
+                                英文<br>浪漫情歌
+                                <span class="tag-desc">Romantic Love Songs | 最适合约会的BGM</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== OST ========== -->
+            <div class="tab-content" id="tab-ost">
+                <div class="section-title">影视原声</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1489599849927-2ee91cede3ba.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="电影原声">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 234.5万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(44,62,80,0.9));">
+                                热门<br>电影原声
+                                <span class="tag-desc">大银幕上的旋律 | 用耳朵看电影</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1514525253161-7a46d19cd819.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="电视剧OST">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 345.8万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(192,57,43,0.9));">
+                                热播剧<br>OST合集
+                                <span class="tag-desc">追剧BGM | 那些剧中的神级配乐</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1459749411175-04bf5292ceea.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="动漫OST">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 178.2万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(142,68,173,0.9));">
+                                动漫<br>OST精选
+                                <span class="tag-desc">二次元音乐盛宴 | 动漫迷必听</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1507838153414-b4b713384a76.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="游戏OST">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 89.6万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(22,160,133,0.9));">
+                                游戏<br>原声带
+                                <span class="tag-desc">沉浸式游戏音乐 | 开启冒险之旅</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1511379938547-c1f69419868d.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="综艺OST">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 56.3万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(243,156,18,0.9));">
+                                综艺<br>名场面BGM
+                                <span class="tag-desc">综艺感拉满 | 笑点泪点全都有</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1487180144351-b8472da7d491.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="韩剧OST">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 412.7万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(108,92,72,0.9));">
+                                韩剧<br>OST精选
+                                <span class="tag-desc">韩剧经典配乐 | 浪漫与感动并存</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 经典 ========== -->
+            <div class="tab-content" id="tab-jingdian">
+                <div class="section-title">经典回顾</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1459749411175-04bf5292ceea.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="80年代经典">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 523.4万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(160,64,0,0.9));">
+                                80年代<br>经典金曲
+                                <span class="tag-desc">复古怀旧 | 那个年代最美的声音</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1514525253161-7a46d19cd819.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="90年代经典">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 678.9万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(192,57,43,0.9));">
+                                90年代<br>华语经典
+                                <span class="tag-desc">华语乐坛黄金年代 | 首首都是回忆</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1493225457124-a3eb161ffa5f.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="00年代经典">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 845.2万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(125,33,128,0.9));">
+                                00年代<br>流行经典
+                                <span class="tag-desc">千禧年流行金曲 | 青春的BGM</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1507838153414-b4b713384a76.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="英文经典">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 392.1万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(41,128,185,0.9));">
+                                经典<br>英文老歌
+                                <span class="tag-desc">欧美经典不朽名曲 | 永恒的旋律</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1487180144351-b8472da7d491.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="日语经典">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 167.8万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(231,76,60,0.9));">
+                                日语<br>经典名曲
+                                <span class="tag-desc">J-Pop经典 | 岛国音乐回忆杀</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1511379938547-c1f69419868d.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="粤语经典">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 456.3万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(39,174,96,0.9));">
+                                粤语<br>殿堂级金曲
+                                <span class="tag-desc">港乐巅峰之作 | 谭张梅陈经典重现</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 欧美 ========== -->
+            <div class="tab-content" id="tab-oumei">
+                <div class="section-title">欧美精选</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1511379938547-c1f69419868d.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="欧美流行">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 534.2万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(142,68,173,0.9));">
+                                欧美<br>流行热单
+                                <span class="tag-desc">Billboard榜单同步 | 全球最热英文歌</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1493225457124-a3eb161ffa5f.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="欧美摇滚">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 267.8万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(44,62,80,0.9));">
+                                欧美<br>摇滚精选
+                                <span class="tag-desc">经典与新生代摇滚 | 激情永不落幕</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1507838153414-b4b713384a76.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="欧美R&B">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 189.5万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(192,57,43,0.9));">
+                                欧美<br>R&B / Soul
+                                <span class="tag-desc">节奏与灵魂 | 欧美R&B精选合集</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1487180144351-b8472da7d491.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="电子舞曲">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 345.6万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(22,160,133,0.9));">
+                                EDM<br>电子舞曲
+                                <span class="tag-desc">全球百大DJ | 电音节现场氛围</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1459749411175-04bf5292ceea.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="拉丁音乐">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 98.7万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(243,156,18,0.9));">
+                                拉丁<br>热情节拍
+                                <span class="tag-desc">Reggaeton & Latin Pop | 热辣拉丁风情</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1514525253161-7a46d19cd819.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="独立民谣">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 123.4万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(108,92,72,0.9));">
+                                Indie<br>Folk独立民谣
+                                <span class="tag-desc">独立音乐人精选 | 清新文艺范</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 民谣(更多) ========== -->
+            <div class="tab-content" id="tab-minyao">
+                <div class="section-title">民谣精选</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1446057032654-9d8885571845.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="城市民谣">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 234.5万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(39,174,96,0.9));">
+                                城市<br>民谣漫步
+                                <span class="tag-desc">诗意与远方 | 用音乐丈量城市的温度</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1504898770365-14faca6a7320.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="校园民谣">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 178.9万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(41,128,185,0.9));">
+                                校园<br>民谣记忆
+                                <span class="tag-desc">青春不散场 | 那些年的吉他与梦想</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1524368535928-5b5e00ddc76b.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="欧美民谣">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 145.3万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(108,92,72,0.9));">
+                                欧美<br>Folk精选
+                                <span class="tag-desc">欧美独立民谣 | 温暖治愈系</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1459749411175-04bf5292ceea.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="古风民谣">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 98.6万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(160,64,0,0.9));">
+                                古风<br>新民谣
+                                <span class="tag-desc">国风与民谣的碰撞 | 新中式美学</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 摇滚(更多) ========== -->
+            <div class="tab-content" id="tab-yaogun">
+                <div class="section-title">摇滚精选</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1493225457124-a3eb161ffa5f.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="华语摇滚">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 345.6万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(192,57,43,0.9));">
+                                华语<br>摇滚经典
+                                <span class="tag-desc">中国摇滚三十年 | 从崔健到新生代</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1511379938547-c1f69419868d.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="英伦摇滚">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 267.8万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(44,62,80,0.9));">
+                                英伦<br>摇滚精选
+                                <span class="tag-desc">Britpop黄金年代 | Oasis、Blur、Radiohead</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1514525253161-7a46d19cd819.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="朋克摇滚">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 123.4万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(39,174,96,0.9));">
+                                朋克<br>不死
+                                <span class="tag-desc">朋克精神永不灭 | 燃烧你的叛逆</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1487180144351-b8472da7d491.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="后摇">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 89.1万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(31,31,31,0.9));">
+                                Post-Rock<br>后摇
+                                <span class="tag-desc">无歌词的史诗 | 情绪的极致表达</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 电子(更多) ========== -->
+            <div class="tab-content" id="tab-dianzi">
+                <div class="section-title">电子音乐</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1514525253161-7a46d19cd819.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="House">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 456.7万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(22,160,133,0.9));">
+                                House<br>浩室舞曲
+                                <span class="tag-desc">4/4拍律动 | 最纯粹的电子舞曲</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1507838153414-b4b713384a76.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="Techno">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 234.5万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(31,31,31,0.9));">
+                                Techno<br>工业电音
+                                <span class="tag-desc">机械与节奏 | 底下室的脉搏</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1493225457124-a3eb161ffa5f.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="Trance">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 178.9万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(142,68,173,0.9));">
+                                Trance<br>迷幻电音
+                                <span class="tag-desc">进入迷幻状态 | 旋律与能量的交融</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1487180144351-b8472da7d491.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="Ambient">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 98.3万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(41,128,185,0.9));">
+                                Ambient<br>氛围电子
+                                <span class="tag-desc">太空漫游 | 声音的无限延伸</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 说唱/Hip-Hop(更多) ========== -->
+            <div class="tab-content" id="tab-hiphop">
+                <div class="section-title">说唱 / Hip-Hop</div>
+                <div class="playlist-grid">
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1514525253161-7a46d19cd819.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="中文说唱">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 345.6万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(44,62,80,0.9));">
+                                中文<br>说唱精选
+                                <span class="tag-desc">华语Hip-Hop崛起 | 有态度的音乐</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1507838153414-b4b713384a76.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="Trap">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 567.8万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(192,57,43,0.9));">
+                                Trap<br>陷阱说唱
+                                <span class="tag-desc">808鼓机律动 | 最潮的Hip-Hop风格</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1493225457124-a3eb161ffa5f.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="Old School">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 189.2万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(243,156,18,0.9));">
+                                Old School<br>经典嘻哈
+                                <span class="tag-desc">回到Hip-Hop黄金年代 | 东海岸西海岸</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="playlist-card">
+                        <div class="playlist-img-wrapper">
+                            <img src="images/photo-1511379938547-c1f69419868d.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" alt="Lo-Fi Hip-Hop">
+                            <span class="playlist-count"><i class="fa-solid fa-headphones"></i> 234.5万</span>
+                            <div class="playlist-placeholder" style="background: linear-gradient(to bottom, transparent, rgba(108,92,72,0.9));">
+                                Lo-Fi<br>Hip-Hop
+                                <span class="tag-desc">慵懒节拍 | 学习工作的完美伴侣</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 隐藏的音频播放器 -->
+    <audio id="audioPlayer" preload="auto"></audio>
+
+    <div class="player-bar">
+        <div class="left-panel">
+            <div class="album-cover" id="trackCover" style="background: linear-gradient(135deg, #ff5e62, #ff9966);"></div>
+            <div class="song-info">
+                <div class="song-title" id="trackName">有什么不同</div>
+                <div class="artist" id="artistName">曲婉婷</div>
+            </div>
+            <div class="interactions">
+                <div class="icon-btn-count" id="likeBtn">
+                    <i class="fa-regular fa-heart"></i>
+                    <span class="badge">100w+</span>
+                </div>
+                <div class="icon-btn-count comment-btn">
+                    <i class="fa-regular fa-comment-dots"></i>
+                    <span class="badge">10w+</span>
+                </div>
+            </div>
+        </div>
+        <div class="center-panel">
+            <div class="control-row">
+                <button class="ctrl-btn" title="顺序播放" id="modeBtn"><i class="fa-solid fa-list-ol"></i></button>
+                <button class="ctrl-btn" title="上一首" id="prevBtn"><i class="fa-solid fa-backward-step"></i></button>
+                <button class="ctrl-btn play-pause-btn" title="播放" id="playBtn"><i class="fa-solid fa-play" id="playIcon"></i></button>
+                <button class="ctrl-btn" title="下一首" id="nextBtn"><i class="fa-solid fa-forward-step"></i></button>
+                <button class="ctrl-btn" title="播放列表"><i class="fa-solid fa-bars-staggered"></i></button>
+            </div>
+            
+            <div class="player-time-row">
+                <span id="currentTime">00:00</span>
+                <span id="totalTime">00:00</span>
+            </div>
+        </div>
+        <div class="right-panel">
+            <span class="quality-tag">极高</span>
+            <i class="fa-regular fa-square-plus right-icon" title="边听边存"></i>
+            <span class="right-icon lrc-icon" title="歌词" style="font-family: sans-serif;">词</span>
+            <i class="fa-solid fa-volume-high right-icon" id="volumeIcon" title="音量"></i>
+            <div style="width:70px; height:4px; background:#e0e0e0; border-radius:2px; cursor:pointer;" id="volumeContainer">
+                <div style="height:100%; width:70%; background:#ec4141; border-radius:2px;" id="volumeBar"></div>
+            </div>
+            <i class="fa-solid fa-ellipsis right-icon" title="更多"></i>
+        </div>
+    </div>
+
+    <script src="js/player.js"></script>
+    <script>
+        // 轻提示
+        let toastTimer = null;
+        function showToast(msg) {
+            let el = document.querySelector('.nem-toast');
+            if (!el) {
+                el = document.createElement('div');
+                el.className = 'nem-toast';
+                el.style.cssText = 'position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;font-size:13px;padding:8px 18px;border-radius:20px;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none;';
+                document.body.appendChild(el);
+            }
+            el.textContent = msg;
+            el.style.opacity = '1';
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.style.opacity = '0', 1600);
+        }
+
+        // 所有 song-item：按歌名匹配 core playlist，能匹配则播放
+        document.querySelectorAll('.song-item').forEach(item => {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', () => {
+                const titleEl = item.querySelector('.song-title');
+                if (!titleEl) return;
+                const idx = NeteasePlayer.indexOfName(titleEl.textContent.trim());
+                if (idx >= 0) NeteasePlayer.playByIndex(idx);
+                else showToast('暂无音源，试试其他歌曲');
+            });
+        });
+
+        // 当前播放歌曲在列表中高亮
+        NeteasePlayer.onChange((snap) => {
+            document.querySelectorAll('.song-item').forEach(item => {
+                const titleEl = item.querySelector('.song-title');
+                const cover = item.querySelector('.song-item-cover i');
+                const isCur = titleEl && titleEl.textContent.trim() === snap.song.name;
+                item.classList.toggle('playing', isCur);
+                if (cover && NeteasePlayer.indexOfName(titleEl.textContent.trim()) >= 0) {
+                    cover.className = (isCur && snap.playing) ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+                }
+            });
+        });
+
+        // 搜索框：过滤当前可见 tab 内的 song-item 与歌单卡
+        const searchInput = document.querySelector('.search-box input');
+        if (searchInput) {
+            const doFilter = () => {
+                const kw = searchInput.value.trim().toLowerCase();
+                const activeTab = document.querySelector('.tab-content.active');
+                if (!activeTab) return;
+                activeTab.querySelectorAll('.song-item').forEach(item => {
+                    const t = item.querySelector('.song-title');
+                    const text = t ? t.textContent.toLowerCase() : '';
+                    item.style.display = (!kw || text.includes(kw)) ? '' : 'none';
+                });
+                activeTab.querySelectorAll('.playlist-card').forEach(card => {
+                    const text = card.textContent.toLowerCase();
+                    card.style.display = (!kw || text.includes(kw)) ? '' : 'none';
+                });
+            };
+            searchInput.addEventListener('input', doFilter);
+            searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doFilter(); });
+        }
+
+        // ===== Tab 切换功能（保留原逻辑） =====
+        const subNavItems = document.querySelectorAll('.sub-nav > li');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const moreWrapper = document.querySelector('.more-wrapper');
+        const moreDropdown = document.querySelector('.more-dropdown');
+
+        function switchTab(tabName) {
+            subNavItems.forEach(li => {
+                li.classList.remove('active');
+                if (li.dataset.tab === tabName) li.classList.add('active');
+            });
+            tabContents.forEach(div => div.classList.remove('active'));
+            const target = document.getElementById('tab-' + tabName);
+            if (target) target.classList.add('active');
+            document.querySelector('.content-scroll').scrollTop = 0;
+        }
+
+        subNavItems.forEach(li => {
+            li.addEventListener('click', (e) => {
+                const tab = li.dataset.tab;
+                if (tab === 'more') {
+                    e.stopPropagation();
+                    moreDropdown.classList.toggle('show');
+                    return;
+                }
+                switchTab(tab);
+            });
+        });
+
+        moreDropdown.querySelectorAll('li').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                switchTab(item.dataset.tab);
+                moreDropdown.classList.remove('show');
+            });
+        });
+
+        document.addEventListener('click', () => {
+            moreDropdown.classList.remove('show');
+        });
+    </script>
+</body>
+</html>
