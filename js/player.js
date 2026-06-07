@@ -1,4 +1,4 @@
-/* 网易云音乐仿站 — 共享播放引擎
+﻿/* 网易云音乐仿站 — 共享播放引擎
  * 跨页面续播：歌曲、进度、音量、静音、播放模式、喜欢状态全部经 localStorage 持久化。
  * 暴露全局 window.NeteasePlayer，页面脚本通过它驱动 UI 并订阅变化。
  */
@@ -10,7 +10,7 @@
         {
             name: "你曾是少年", artist: "焦迈奇", album: "你曾是少年",
             src: "audio/你曾是少年.mp3",
-            cover: "images/songs/shaonian.jpg",
+            cover: "https://download.whius.top/images/songs/shaonian.jpg",
             duration: "04:23",
             bg: "linear-gradient(135deg, #3a7bd5, #3a6073)",
             lyrics: ["许多年前", "你曾是个朴素的少年", "爱上一个人", "就不怕付出自己一生", "相信爱会永恒"]
@@ -18,7 +18,7 @@
         {
             name: "没有什么不同", artist: "曲婉婷", album: "Say The Words",
             src: "audio/没有什么不同.mp3",
-            cover: "images/songs/butong.jpg",
+            cover: "https://download.whius.top/images/songs/butong.jpg",
             duration: "04:51",
             bg: "linear-gradient(135deg, #ff5e62, #ff9966)",
             lyrics: ["如果有一天", "我变得更复杂", "请记得曾经那个", "简单的我", "没有什么不同"]
@@ -26,7 +26,7 @@
         {
             name: "修炼爱情", artist: "林俊杰", album: "因你而在",
             src: "audio/修炼爱情.m4a",
-            cover: "images/songs/xiulian.jpg",
+            cover: "https://download.whius.top/images/songs/xiulian.jpg",
             duration: "05:24",
             bg: "linear-gradient(135deg, #701ebd, #3f51b5)",
             lyrics: ["修炼爱情的心酸", "我们这些努力不简单", "快乐炼成泪水", "是一种勇敢", "回忆烧成灰还是等结尾"]
@@ -34,7 +34,7 @@
         {
             name: "时光隧道", artist: "陈奕迅", album: "米·闪",
             src: "audio/时光隧道.m4a",
-            cover: "images/songs/suidao.jpg",
+            cover: "https://download.whius.top/images/songs/suidao.jpg",
             duration: "04:14",
             bg: "linear-gradient(135deg, #11998e, #38ef7d)",
             lyrics: ["穿过时光隧道", "回到那一年", "我们都还年少", "笑得很甜", "不知道什么是离别"]
@@ -42,7 +42,7 @@
         {
             name: "隐隐作痛", artist: "动力火车", album: "都是因为爱",
             src: "audio/隐隐作痛.m4a",
-            cover: "images/songs/yintong.jpg",
+            cover: "https://download.whius.top/images/songs/yintong.jpg",
             duration: "04:47",
             bg: "linear-gradient(135deg, #de6262, #ffb88c)",
             lyrics: ["心还在隐隐作痛", "那些回忆挥之不去", "你的笑容", "成了最深的伤口", "却舍不得放手"]
